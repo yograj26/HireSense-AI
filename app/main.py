@@ -4,6 +4,10 @@ import pandas as pd
 from evaluation import evaluate_candidate
 from batch_screening import screen_uploaded_resumes
 from storage import init_db, save_screening, get_screening_history
+from app.evaluation import evaluate_candidate
+from app.matcher import extract_skills
+from app.semantic_matcher import semantic_analysis
+from app.storage import init_db, save_screening, get_screening_history
 init_db()
 TAXONOMY=['Python','SQL','Machine Learning','Scikit-learn','Pandas','NumPy','TensorFlow','PyTorch','NLP','Natural Language Processing','Power BI','Tableau','Excel','Git','Docker','Java','JavaScript','React','FastAPI','Flask','AWS','Data Visualization','Statistics','Deep Learning']
 DEMO=[
