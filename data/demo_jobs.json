@@ -1,0 +1,45 @@
+[
+  {
+    "title": "Junior Data Scientist",
+    "required": [
+      "Python",
+      "SQL",
+      "Machine Learning"
+    ],
+    "preferred": [
+      "Pandas",
+      "Scikit-learn",
+      "Data Visualization"
+    ],
+    "description": "Build data-driven solutions, develop machine learning models, and analyze data."
+  },
+  {
+    "title": "ML Engineer",
+    "required": [
+      "Python",
+      "Machine Learning",
+      "Docker",
+      "FastAPI"
+    ],
+    "preferred": [
+      "PyTorch",
+      "AWS",
+      "Git"
+    ],
+    "description": "Build, deploy and maintain machine learning services and APIs."
+  },
+  {
+    "title": "Data Analyst",
+    "required": [
+      "SQL",
+      "Python",
+      "Excel"
+    ],
+    "preferred": [
+      "Power BI",
+      "Tableau",
+      "Statistics"
+    ],
+    "description": "Analyze datasets, build dashboards, and communicate business insights."
+  }
+]

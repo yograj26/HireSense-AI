@@ -1,0 +1,7 @@
+{
+ "info":{"name":"SmartHire AI API","schema":"https://schema.getpostman.com/json/collection/v2.1.0/collection.json"},
+ "item":[
+  {"name":"Health","request":{"method":"GET","url":"http://localhost:8000/health"}},
+  {"name":"Match candidate","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"candidate_skills\":[\"Python\",\"SQL\",\"Pandas\"],\"required_skills\":[\"Python\",\"SQL\",\"Machine Learning\"],\"preferred_skills\":[\"Pandas\",\"Scikit-learn\"]}"},"url":"http://localhost:8000/match"}}
+ ]
+}

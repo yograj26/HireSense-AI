@@ -1,0 +1,3 @@
+Rohan Gupta
+Skills: Python, NumPy, Pandas, Statistics, Machine Learning
+Projects: Regression model, exploratory data analysis

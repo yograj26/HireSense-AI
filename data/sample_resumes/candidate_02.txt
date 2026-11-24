@@ -1,0 +1,3 @@
+Priya Singh
+Skills: Python, TensorFlow, Deep Learning, NLP, Pandas, SQL
+Projects: Text classification, sentiment analysis

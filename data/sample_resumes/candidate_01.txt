@@ -1,0 +1,3 @@
+Aarav Sharma
+Skills: Python, SQL, Machine Learning, Pandas, Scikit-learn, Git
+Projects: Customer churn prediction, analytics pipeline

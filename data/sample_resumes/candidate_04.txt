@@ -1,0 +1,3 @@
+Neha Verma
+Skills: Python, Java, Docker, FastAPI, Git, Machine Learning
+Projects: API deployment, ML microservice

@@ -1,0 +1,16 @@
+Issue Type,Summary,Description,Priority,Epic
+Epic,Requirements and Planning,Define scope and system design,High,Planning
+Epic,Resume Parsing,Upload and extract resume text,High,Resume Processing
+Epic,Job Management,Create and manage job descriptions,High,Jobs
+Epic,Matching Engine,Skill extraction and match score,High,AI
+Epic,Recruiter Dashboard,Ranking and candidate detail views,High,Frontend
+Epic,Testing,Unit and API tests,High,Quality
+Epic,DevOps,Docker and Jenkins,Medium,DevOps
+Epic,Deployment,Deploy MVP,Medium,Release
+Task,Create skill taxonomy,Build taxonomy and alias list,High,AI
+Task,Build matching baseline,Required and preferred skill score,High,AI
+Task,Upload PDF resume,Extract text and detected skills,High,Resume Processing
+Task,Create recruiter ranking view,Sort candidates and show match explanation,High,Frontend
+Task,Create test suite,Test matching and parser edge cases,High,Quality
+Task,Create Docker image,Build and run MVP container,Medium,DevOps
+Task,Create Jenkins pipeline,Checkout test and build image,Medium,DevOps

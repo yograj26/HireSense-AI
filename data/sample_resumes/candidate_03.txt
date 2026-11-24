@@ -1,0 +1,3 @@
+Kabir Mehta
+Skills: SQL, Power BI, Excel, Tableau, Python
+Projects: Business dashboards, sales analytics
