@@ -1,13 +1,19 @@
+import hashlib
+import json
+
 import streamlit as st
 from matcher import score_match, extract_skills
 import pandas as pd
 from evaluation import evaluate_candidate
 from batch_screening import screen_uploaded_resumes
 from storage import init_db, save_screening, get_screening_history
-from app.evaluation import evaluate_candidate
-from app.matcher import extract_skills
-from app.semantic_matcher import semantic_analysis
-from app.storage import init_db, save_screening, get_screening_history
+from analytics import (
+    compare_candidates,
+    get_recruiter_insights,
+    get_score_distribution,
+)
+from explainability import generate_explanation
+from semantic_matcher import semantic_analysis
 init_db()
 TAXONOMY=['Python','SQL','Machine Learning','Scikit-learn','Pandas','NumPy','TensorFlow','PyTorch','NLP','Natural Language Processing','Power BI','Tableau','Excel','Git','Docker','Java','JavaScript','React','FastAPI','Flask','AWS','Data Visualization','Statistics','Deep Learning']
 DEMO=[
@@ -68,13 +74,62 @@ with tabs[0]:
      doc=fitz.open(stream=f.getvalue(),filetype='pdf'); text=' '.join(p.get_text() for p in doc)
     except Exception as e: st.warning(f'Could not parse {f.name}: {e}')
    skills=extract_skills(text,TAXONOMY)
-   candidates.append({'name':f.name,'skills':skills,'experience':'Not extracted','projects':'Extracted resume text'})
+   candidates.append({'name':f.name,'skills':skills,'experience':'Not extracted','projects':'Extracted resume text','resume_text':text})
+ job_context = "\n".join([
+     f"Job title: {job_title}",
+     f"Job description: {job_desc}",
+     f"Required skills: {', '.join(required)}",
+     f"Preferred skills: {', '.join(preferred)}",
+ ])
+ candidate_texts = [
+     "\n".join(
+         part
+         for part in [
+             f"Resume: {candidate.get('resume_text', '')}",
+             f"Skills: {', '.join(candidate['skills'])}",
+             f"Experience: {candidate['experience']}",
+             f"Projects: {candidate['projects']}",
+         ]
+         if part.strip()
+     )
+     for candidate in candidates
+ ]
+ semantic_signature = hashlib.sha256(
+     json.dumps(
+         [job_context, candidate_texts],
+         ensure_ascii=False,
+     ).encode("utf-8")
+ ).hexdigest()
+ st.caption(
+     "Semantic similarity is an optional text-relevance signal; "
+     "it does not replace the skill-coverage score."
+ )
+ if st.button("Calculate semantic matches", key="calculate_semantic_matches"):
+     with st.spinner("Loading the semantic model and comparing profiles..."):
+         semantic_scores = semantic_analysis(job_context, candidate_texts)
+     st.session_state["semantic_match_results"] = {
+         "signature": semantic_signature,
+         "scores": semantic_scores,
+     }
+ cached_semantic = st.session_state.get("semantic_match_results")
+ semantic_scores = None
+ if cached_semantic:
+     if cached_semantic["signature"] == semantic_signature:
+         semantic_scores = cached_semantic["scores"]
+     else:
+         st.info("Job details or candidate profiles changed. Recalculate semantic matches.")
  rows=[]
- for cand in candidates:
+ for index,cand in enumerate(candidates):
   res=score_match(cand['skills'],required,preferred)
-  rows.append({'Candidate':cand['name'],'Score (%)':res['score'],'Matched Required':', '.join(res['matched_required']),'Missing Required':', '.join(res['missing_required']),'Preferred Match':', '.join(res['matched_preferred']),'Experience':cand['experience'],'Projects':cand['projects'],'Skills':cand['skills']})
+  row={'Candidate':cand['name'],'Score (%)':res['score'],'Matched Required':', '.join(res['matched_required']),'Missing Required':', '.join(res['missing_required']),'Preferred Match':', '.join(res['matched_preferred']),'Experience':cand['experience'],'Projects':cand['projects'],'Skills':cand['skills']}
+  if semantic_scores is not None:
+   row['Semantic Match (%)']=semantic_scores[index]
+  rows.append(row)
  df=pd.DataFrame(rows).sort_values('Score (%)',ascending=False)
- st.dataframe(df[['Candidate','Score (%)','Matched Required','Missing Required','Preferred Match','Experience']],use_container_width=True,hide_index=True)
+ display_columns=['Candidate','Score (%)','Matched Required','Missing Required','Preferred Match','Experience']
+ if 'Semantic Match (%)' in df.columns:
+  display_columns.insert(2,'Semantic Match (%)')
+ st.dataframe(df[display_columns],width='stretch',hide_index=True)
  pick=st.selectbox('Inspect candidate',df['Candidate'].tolist())
  r=df[df['Candidate']==pick].iloc[0]
  st.markdown(f'### {pick} — {r["Score (%)"]}% compatibility (decision-support only)')
@@ -82,6 +137,14 @@ with tabs[0]:
  st.write('**Missing required skills:**',r['Missing Required'] or 'None identified')
  st.write('**Preferred skills evidenced:**',r['Preferred Match'] or 'None identified')
  st.write('**Resume skills detected:**',', '.join(r['Skills']))
+ semantic_score = r.get('Semantic Match (%)')
+ with st.expander("Explainable match details"):
+  explanation = generate_explanation(
+      evaluate_candidate(r['Skills'],required,preferred),
+      semantic_score=semantic_score,
+  )
+  for item in explanation:
+   st.write(f"- {item}")
  st.info('Scores reflect skill overlap only. They are not a validated prediction of job performance and should not be used for automatic rejection.')
 with tabs[1]:
     st.subheader("Resume / Text Skill Analyzer")
@@ -100,6 +163,10 @@ with tabs[1]:
     preferred_input = st.text_input(
         "Preferred skills (comma-separated)",
         placeholder="Pandas, Git, Power BI"
+    )
+    include_semantic = st.checkbox(
+        "Include semantic similarity",
+        help="Compares the pasted resume with the job description in the sidebar. This score is not a probability.",
     )
 
     if st.button("Evaluate Candidate", key="extract"):
@@ -125,6 +192,21 @@ with tabs[1]:
                 required,
                 preferred
             )
+            semantic_score = None
+            if include_semantic:
+                analyzer_job_context = "\n".join(
+                    [
+                        f"Job title: {job_title}",
+                        f"Job description: {job_desc}",
+                        f"Required skills: {required_input}",
+                        f"Preferred skills: {preferred_input}",
+                    ]
+                )
+                with st.spinner("Loading the semantic model and comparing text..."):
+                    semantic_score = semantic_analysis(
+                        analyzer_job_context,
+                        [txt],
+                    )[0]
 
             st.markdown("### Candidate Evaluation")
 
@@ -181,14 +263,52 @@ with tabs[1]:
                 "This score measures skill coverage only. "
                 "It is not a validated prediction of job performance."
             )
+            with st.expander("Explainable evaluation"):
+                for item in generate_explanation(
+                    result,
+                    semantic_score=semantic_score,
+                ):
+                    st.write(f"- {item}")
 with tabs[2]:
  st.subheader('Screening analytics')
  if 'df' in locals():
   st.bar_chart(df.set_index('Candidate')['Score (%)'])
   st.write('Ranked candidate count:',len(df))
   st.download_button('Download screening results CSV',df.drop(columns=['Skills','Projects']).to_csv(index=False),'screening_results.csv','text/csv')
+ if "batch_df" in st.session_state:
+     df = st.session_state["batch_df"]
+
+     if not df.empty:
+         insights = get_recruiter_insights(df)
+
+         st.subheader("Recruiter Intelligence")
+
+         c1, c2, c3, c4 = st.columns(4)
+
+         c1.metric("Candidates", insights["total_candidates"])
+         c2.metric("Average Match", f'{insights["average_score"]}%')
+         c3.metric("Top Match", f'{insights["top_score"]}%')
+         c4.metric(
+             "Qualification Rate",
+             f'{insights["qualification_rate"]}%'
+         )
+
+         st.subheader("Candidate Score Distribution")
+
+         distribution = get_score_distribution(df)
+         st.bar_chart(distribution)
+
+         st.subheader("Ranked Candidate Comparison")
+
+         ranked = compare_candidates(df)
+
+         st.dataframe(
+             ranked,
+             width="stretch",
+             hide_index=True
+         )
 with tabs[3]:
- st.markdown('''### Matching methodology\n- Skill aliases are normalized (for example ML → Machine Learning).\n- Required skills contribute up to 80 points.\n- Preferred skills contribute up to 20 points.\n- Scores are transparent skill-coverage indicators, not hiring predictions.\n- Demo profiles are synthetic.\n- The current baseline does not yet use embeddings or a learned model.''')
+ st.markdown('''### Matching methodology\n- Skill aliases are normalized (for example ML → Machine Learning).\n- Required skills contribute up to 80 points.\n- Preferred skills contribute up to 20 points.\n- Optional semantic matching compares job and candidate text using Sentence Transformer embeddings.\n- Semantic similarity is shown separately and does not change the weighted skills score.\n- Scores are decision-support signals, not hiring predictions; human review is required.\n- Demo profiles are synthetic.''')
  st.code('Score = Required Skill Coverage × 80 + Preferred Skill Coverage × 20')
 
 with tabs[4]:

@@ -32,4 +32,17 @@ def test_preferred_skill_score():
 
     assert result["required_score"] == 100.0
     assert result["preferred_score"] == 50.0
+
+
+def test_skill_aliases_are_normalized_for_explanations():
+    result = evaluate_candidate(
+        ["ML", "sklearn"],
+        ["Machine Learning", "Scikit-learn"],
+    )
+
+    assert result["required_score"] == 100.0
+    assert result["matched_required"] == [
+        "machine learning",
+        "scikit-learn",
+    ]
     

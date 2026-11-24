@@ -1,3 +1,9 @@
+if __package__:
+    from .matcher import normalize_skills
+else:
+    from matcher import normalize_skills
+
+
 def evaluate_candidate(candidate_skills, required_skills, preferred_skills=None):
     """
     Evaluate a candidate based on required and preferred skill coverage.
@@ -5,9 +11,9 @@ def evaluate_candidate(candidate_skills, required_skills, preferred_skills=None)
 
     preferred_skills = preferred_skills or []
 
-    candidate = {s.strip().lower() for s in candidate_skills}
-    required = {s.strip().lower() for s in required_skills}
-    preferred = {s.strip().lower() for s in preferred_skills}
+    candidate = set(normalize_skills(candidate_skills))
+    required = set(normalize_skills(required_skills))
+    preferred = set(normalize_skills(preferred_skills))
 
     matched_required = candidate & required
     matched_preferred = candidate & preferred
