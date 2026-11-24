@@ -1,23 +1,23 @@
+
 pipeline {
     agent any
 
     stages {
         stage('Checkout') {
             steps {
-                echo 'Starting HireSense pipeline'
+                echo 'Starting HireSense AI pipeline'
             }
         }
 
-        stage('Python Environment') {
+        stage('Python Check') {
             steps {
                 bat 'python --version'
-                bat 'pip --version'
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                bat 'pip install -r requirements.txt'
+                bat 'python -m pip install -r requirements.txt'
             }
         }
 
@@ -27,7 +27,7 @@ pipeline {
             }
         }
 
-        stage('Compile Python') {
+        stage('Compile Application') {
             steps {
                 bat 'python -m compileall app'
             }
@@ -36,11 +36,10 @@ pipeline {
 
     post {
         success {
-            echo 'HireSense pipeline completed successfully!'
+            echo 'HireSense AI pipeline completed successfully!'
         }
-
         failure {
-            echo 'Pipeline failed. Check test logs.'
+            echo 'Pipeline failed. Check the logs.'
         }
     }
 }

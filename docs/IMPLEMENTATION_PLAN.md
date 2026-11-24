@@ -3,7 +3,7 @@
 2. Git: initialize repository and commit MVP.
 3. Dataset: synthetic demo profiles and skill taxonomy.
 4. Backend logic: modular matching engine.
-5. AI baseline: taxonomy extraction and weighted score; semantic model is a future enhancement.
+5. AI: taxonomy extraction, weighted skill coverage and optional Sentence Transformer semantic similarity with human-readable explanations.
 6. UI: Streamlit recruiter demonstration.
 7. Tests: pytest matching tests.
 8. API: initial Postman placeholder; production API service should be a follow-on.
