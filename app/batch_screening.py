@@ -1,8 +1,12 @@
 import pandas as pd
 import pymupdf
 
-from app.evaluation import evaluate_candidate
-from app.matcher import extract_skills
+if __package__:
+    from .evaluation import evaluate_candidate
+    from .matcher import extract_skills
+else:
+    from evaluation import evaluate_candidate
+    from matcher import extract_skills
 
 
 def rank_candidates(candidate_results):
