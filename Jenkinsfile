@@ -4,49 +4,42 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
+                echo 'Starting HireSense AI CI Pipeline'
                 checkout scm
             }
         }
 
-        stage('Python Version') {
+        stage('Python Environment') {
             steps {
-                bat 'python --version'
+                sh 'python3 --version'
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                bat 'python -m pip install --upgrade pip'
-                bat 'python -m pip install -r requirements.txt'
+                sh 'python3 -m pip install -r requirements.txt'
             }
         }
 
         stage('Run Tests') {
             steps {
-                bat 'python -m pytest tests -v'
+                sh 'python3 -m pytest tests -v'
             }
         }
 
         stage('Compile Application') {
             steps {
-                bat 'python -m compileall app'
-            }
-        }
-
-        stage('Docker Build') {
-            steps {
-                bat 'docker build -t hiresense-ai .'
+                sh 'python3 -m compileall app'
             }
         }
     }
 
     post {
         success {
-            echo 'HireSense AI CI pipeline passed successfully!'
+            echo 'HireSense AI pipeline completed successfully!'
         }
-
         failure {
-            echo 'Pipeline failed. Review the stage logs.'
+            echo 'Pipeline failed. Check Console Output.'
         }
     }
 }
