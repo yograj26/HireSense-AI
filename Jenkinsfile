@@ -2,44 +2,45 @@ pipeline {
     agent any
 
     stages {
-        stage('Checkout') {
-            steps {
-                echo 'Starting HireSense AI CI Pipeline'
-                checkout scm
-            }
-        }
-
         stage('Python Environment') {
             steps {
                 sh 'python3 --version'
+                sh 'python3 -m venv .venv'
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                sh 'python3 -m pip install -r requirements.txt'
+                sh '.venv/bin/python -m pip install --upgrade pip'
+                sh '.venv/bin/python -m pip install -r requirements.txt pytest'
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh 'python3 -m pytest tests -v'
+                sh '.venv/bin/python -m pytest tests -v'
             }
         }
 
         stage('Compile Application') {
             steps {
-                sh 'python3 -m compileall app'
+                sh '.venv/bin/python -m compileall app'
+            }
+        }
+
+        stage('Git Validation') {
+            steps {
+                sh 'git diff --check'
             }
         }
     }
 
     post {
         success {
-            echo 'HireSense AI pipeline completed successfully!'
+            echo 'HireSense AI CI Pipeline Passed!'
         }
         failure {
-            echo 'Pipeline failed. Check Console Output.'
+            echo 'Build failed. Check Console Output.'
         }
     }
 }
