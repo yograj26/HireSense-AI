@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    options {
+        timestamps()
+        timeout(time: 30, unit: 'MINUTES')
+    }
+
     stages {
         stage('Python Environment') {
             steps {
@@ -9,10 +14,16 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Install CI Dependencies') {
             steps {
-                sh '.venv/bin/python -m pip install --upgrade pip'
-                sh '.venv/bin/python -m pip install -r requirements.txt pytest'
+                sh '''
+                    set -eu
+
+                    grep -Eiv '^(torch|sentence[-_]transformers|transformers|tokenizers|huggingface[-_]hub|safetensors|hf[-_]xet|nvidia[-_]|cuda[-_]|triton)([<=>!~].*)?$' requirements.txt > requirements-ci.txt
+
+                    echo "Installing lightweight CI dependencies..."
+                    .venv/bin/python -m pip install --retries 3 --timeout 120 -r requirements-ci.txt pytest
+                '''
             }
         }
 
@@ -39,6 +50,7 @@ pipeline {
         success {
             echo 'HireSense AI CI Pipeline Passed!'
         }
+
         failure {
             echo 'Build failed. Check Console Output.'
         }
