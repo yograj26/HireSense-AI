@@ -1,64 +1,49 @@
 import sqlite3
-import pandas as pd
 from pathlib import Path
 
-DB_PATH = Path(__file__).resolve().parent.parent / "data" / "hiresense.db"
-DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-
+DB_PATH = Path(__file__).resolve().parent.parent / "hiresense.db"
 
 def init_db():
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS screenings (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                candidate TEXT,
-                score REAL,
-                required_score REAL,
-                preferred_score REAL,
-                matched_skills TEXT,
-                missing_skills TEXT,
-                status TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS screenings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            candidate_name TEXT,
+            score REAL,
+            matched_skills TEXT,
+            missing_skills TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    conn.commit()
+    conn.close()
 
-
-def save_screening(df):
-    if df.empty:
-        return
-
-    init_db()
-
-    with sqlite3.connect(DB_PATH) as conn:
-        for _, row in df.iterrows():
-            conn.execute("""
-                INSERT INTO screenings
-                (candidate, score, required_score, preferred_score,
-                 matched_skills, missing_skills, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (
-                str(row.get("Candidate", "")),
-                float(row.get("Score (%)", 0)),
-                float(row.get("Required Score (%)", 0)),
-                float(row.get("Preferred Score (%)", 0)),
-                str(row.get("Matched Skills", "")),
-                str(row.get("Missing Skills", "")),
-                str(row.get("Status", ""))
-            ))
-
+def save_screening(candidate_name, score, matched_skills, missing_skills):
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("""
+        INSERT INTO screenings
+        (candidate_name, score, matched_skills, missing_skills)
+        VALUES (?, ?, ?, ?)
+    """, (
+        candidate_name,
+        score,
+        ", ".join(matched_skills),
+        ", ".join(missing_skills)
+    ))
+    conn.commit()
+    conn.close()
 
 def get_screening_history():
-    init_db()
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    rows = conn.execute("""
+        SELECT * FROM screenings ORDER BY created_at DESC
+    """).fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
 
-    with sqlite3.connect(DB_PATH) as conn:
-        return pd.read_sql_query(
-            "SELECT * FROM screenings ORDER BY created_at DESC",
-            conn
-        )
-
-
-def clear_screening_history():
-    init_db()
-
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.execute("DELETE FROM screenings")
+def clear_history():
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("DELETE FROM screenings")
+    conn.commit()
+    conn.close()

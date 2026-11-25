@@ -1,8 +1,7 @@
 services:
-  smarthire-ui:
+  hiresense:
     build: .
-    ports: ["8501:8501"]
-  smarthire-api:
-    build: .
-    command: ["uvicorn","app.api:app","--host","0.0.0.0","--port","8000"]
-    ports: ["8000:8000"]
+    container_name: hiresense-ai
+    ports:
+      - "8501:8501"
+    restart: unless-stopped

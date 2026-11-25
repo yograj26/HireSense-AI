@@ -7,7 +7,7 @@ import pandas as pd
 from app.recruiter_assistant import generate_recruiter_insights
 from evaluation import evaluate_candidate
 from batch_screening import screen_uploaded_resumes
-from storage import init_db, save_screening, get_screening_history
+from storage import init_db, save_screening, get_screening_history, clear_history
 from analytics import (
     compare_candidates,
     get_recruiter_insights,
@@ -15,6 +15,7 @@ from analytics import (
 )
 from explainability import generate_explanation
 from semantic_matcher import semantic_analysis
+
 init_db()
 TAXONOMY=['Python','SQL','Machine Learning','Scikit-learn','Pandas','NumPy','TensorFlow','PyTorch','NLP','Natural Language Processing','Power BI','Tableau','Excel','Git','Docker','Java','JavaScript','React','FastAPI','Flask','AWS','Data Visualization','Statistics','Deep Learning']
 DEMO=[
@@ -107,7 +108,10 @@ with tabs[0]:
  )
  if st.button("Calculate semantic matches", key="calculate_semantic_matches"):
      with st.spinner("Loading the semantic model and comparing profiles..."):
-         semantic_scores = semantic_analysis(job_context, candidate_texts)
+         semantic_scores = [
+             semantic_analysis(candidate_text, job_context)["semantic_score"]
+             for candidate_text in candidate_texts
+         ]
      st.session_state["semantic_match_results"] = {
          "signature": semantic_signature,
          "scores": semantic_scores,
@@ -205,9 +209,9 @@ with tabs[1]:
                 )
                 with st.spinner("Loading the semantic model and comparing text..."):
                     semantic_score = semantic_analysis(
+                        txt,
                         analyzer_job_context,
-                        [txt],
-                    )[0]
+                    )["semantic_score"]
 
             st.markdown("### Candidate Evaluation")
 
@@ -338,7 +342,21 @@ with tabs[4]:
             batch_df.insert(0, "Rank", range(1, len(batch_df) + 1))
 
             st.session_state["batch_df"] = batch_df
-            save_screening(batch_df)
+            for _, row in batch_df.iterrows():
+                save_screening(
+                    str(row["Candidate"]),
+                    float(row["Score (%)"]),
+                    [
+                        skill.strip()
+                        for skill in str(row["Matched Required"]).split(",")
+                        if skill.strip()
+                    ],
+                    [
+                        skill.strip()
+                        for skill in str(row["Missing Required"]).split(",")
+                        if skill.strip()
+                    ],
+                )
             st.success("Screening results saved to database!")
 
     if "batch_df" in st.session_state:
@@ -360,24 +378,25 @@ with tabs[4]:
 with tabs[5]:
     st.header("Screening History")
 
-    history = get_screening_history()
+    history_records = get_screening_history()
 
-    if history.empty:
+    if not history_records:
         st.info("No saved screening records yet.")
     else:
+        history_df = pd.DataFrame(history_records)
         c1, c2 = st.columns(2)
 
-        c1.metric("Stored Records", len(history))
+        c1.metric("Stored Records", len(history_df))
         c2.metric(
             "Average Score",
-            f"{history['score'].mean():.2f}%"
+            f"{history_df['score'].mean():.2f}%"
         )
 
-        st.dataframe(history, width="stretch")
+        st.dataframe(history_df, width="stretch")
 
         st.download_button(
             "Download History CSV",
-            history.to_csv(index=False).encode("utf-8"),
+            history_df.to_csv(index=False).encode("utf-8"),
             "HireSense_screening_history.csv",
             "text/csv"
         )
@@ -554,3 +573,86 @@ if "batch_results" in st.session_state and st.session_state["batch_results"] is 
 
 else:
     st.info("Run batch screening first to enable candidate comparison.")
+st.subheader("Save Batch Results to Database")
+
+if "batch_results" in st.session_state:
+    batch_df = st.session_state["batch_results"]
+
+    if batch_df is not None and not batch_df.empty:
+
+        if st.button("Save Current Screening Results"):
+            name_col = next(
+                (c for c in batch_df.columns
+                 if c.lower() in ["candidate", "candidate name", "name"]),
+                None
+            )
+
+            score_col = next(
+                (c for c in batch_df.columns
+                 if "score" in c.lower()),
+                None
+            )
+
+            if name_col and score_col:
+                for _, row in batch_df.iterrows():
+                    save_screening(
+                        str(row[name_col]),
+                        float(row[score_col]),
+                        [],
+                        []
+                    )
+
+                st.success("Screening results saved to SQLite!")
+                st.rerun()
+            else:
+                st.warning("Candidate name or score column not found.")
+st.divider()
+st.header("🗄️ Screening History")
+
+history = get_screening_history()
+
+if history:
+    history_df = pd.DataFrame(history)
+    st.dataframe(history_df, width="stretch")
+
+    if st.button("Clear Screening History"):
+        clear_history()
+        st.rerun()
+else:
+    st.info("No saved screening history yet.")
+
+st.divider()
+st.header("🧠 Semantic AI Resume Analysis")
+
+resume_text_input = st.text_area(
+    "Paste resume text",
+    height=200,
+    key="semantic_resume_text",
+)
+job_text_input = st.text_area(
+    "Paste job description",
+    height=200,
+    key="semantic_job_text",
+)
+
+if st.button("Run Semantic AI Analysis", key="semantic_analysis_button"):
+    if resume_text_input.strip() and job_text_input.strip():
+        with st.spinner("Analyzing semantic similarity..."):
+            result = semantic_analysis(
+                resume_text_input,
+                job_text_input,
+            )
+
+        st.metric(
+            "Semantic Similarity",
+            f'{result["semantic_score"]}%',
+        )
+        st.write(result["label"])
+        st.progress(
+            min(max(result["semantic_score"] / 100, 0.0), 1.0)
+        )
+        st.caption(
+            "Similarity indicates text similarity, not candidate quality."
+        )
+    else:
+        st.warning("Paste both resume text and a job description.")

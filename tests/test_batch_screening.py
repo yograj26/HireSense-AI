@@ -62,9 +62,16 @@ def test_saves_batch_results_to_screening_history(tmp_path, monkeypatch):
         ["Git"],
     )
 
-    storage.save_screening(results)
+    storage.init_db()
+    for _, row in results.iterrows():
+        storage.save_screening(
+            row["Candidate"],
+            row["Score (%)"],
+            [skill for skill in row["Matched Required"].split(", ") if skill],
+            [skill for skill in row["Missing Required"].split(", ") if skill],
+        )
 
     history = storage.get_screening_history()
-    assert history.loc[0, "candidate"] == "candidate.txt"
-    assert history.loc[0, "score"] == 100.0
-    assert history.loc[0, "matched_skills"] == "git, python"
+    assert history[0]["candidate_name"] == "candidate.txt"
+    assert history[0]["score"] == 100.0
+    assert history[0]["matched_skills"] == "python"

@@ -1,136 +1,65 @@
-# HireSense AI — Intelligent Resume Screening & Candidate Matching
+# HireSense AI — Intelligent Resume Screening & Job Matching System
 
-An AI-assisted recruitment screening platform designed to analyze resumes against job descriptions, identify skill matches, calculate transparent matching scores, and help recruiters organize candidate evaluations.
+An AI-assisted recruitment screening platform that analyzes resumes against job descriptions, identifies skill alignment, provides transparent matching insights, and supports recruiter decision-making.
 
-## Overview
+## Project Overview
 
-HireSense AI helps streamline the initial resume-screening process using skill extraction, weighted matching, semantic similarity analysis, candidate analytics, and explainable scoring.
+HireSense AI helps recruiters streamline preliminary resume analysis through skill extraction, candidate matching, explainability, analytics, and candidate comparison.
 
-## Key Features
+The system is designed as a decision-support tool. It does not replace human recruitment decisions.
 
-- **Resume Parsing:** Extract information and skills from uploaded resumes.
-- **Skill Matching:** Compare candidate skills with job requirements.
-- **Weighted Evaluation:** Evaluate required and preferred skills separately.
-- **Batch Screening:** Analyze multiple candidates in one workflow.
-- **Semantic Analysis:** Compare resume and job description text using NLP embeddings.
-- **Explainable Results:** Show matched and missing skills behind scores.
-- **Recruiter Analytics:** Summarize and compare screening results.
-- **Data Export:** Export screening results for further analysis.
-- **API Layer:** Support application integration through an API.
-- **Testing:** Automated tests for application components.
+## Features
 
-## Tech Stack
+- Resume screening and candidate analysis
+- Job description analysis
+- Skill extraction and matching
+- Candidate matching score
+- Required and preferred skill comparison
+- Explainable matching results
+- Semantic similarity analysis
+- Batch candidate screening
+- Recruiter intelligence insights
+- Candidate comparison dashboard
+- Screening history with SQLite
+- Data visualization and analytics
+- FastAPI backend
+- Streamlit dashboard
+- Docker containerization
+- Jenkins CI pipeline
 
-| Layer | Technology |
+## Technology Stack
+
+| Component | Technology |
 |---|---|
 | Frontend | Streamlit |
+| Backend API | FastAPI |
 | Programming Language | Python |
-| Machine Learning | Scikit-learn |
-| NLP / Semantic Analysis | Sentence Transformers |
-| Data Analysis | Pandas |
+| ML | Scikit-learn |
+| Semantic AI | Sentence Transformers |
+| Data Processing | Pandas |
 | Database | SQLite |
-| API | FastAPI |
 | Testing | Pytest |
 | Containerization | Docker |
 | CI/CD | Jenkins |
 | Version Control | Git & GitHub |
 
-## Architecture
-
-```text
-                  ┌────────────────────────┐
-                  │      Recruiter         │
-                  └───────────┬────────────┘
-                              │
-                              ▼
-                  ┌────────────────────────┐
-                  │   Streamlit Interface  │
-                  │ Dashboard & Uploads    │
-                  └───────────┬────────────┘
-                              │
-                              ▼
-                  ┌────────────────────────┐
-                  │   Resume Processing    │
-                  │ PDF/Text Extraction    │
-                  └───────────┬────────────┘
-                              │
-                              ▼
-                  ┌────────────────────────┐
-                  │   Skill Extraction     │
-                  │   & Normalization      │
-                  └───────────┬────────────┘
-                              │
-                              ▼
-           ┌──────────────────┴──────────────────┐
-           │                                     │
-           ▼                                     ▼
-┌─────────────────────────┐       ┌────────────────────────┐
-│ Weighted Skill Matching │       │ Semantic Similarity     │
-│ Required & Preferred    │       │ NLP Embeddings          │
-└────────────┬────────────┘       └────────────┬───────────┘
-             │                                  │
-             └────────────────┬─────────────────┘
-                              ▼
-                  ┌────────────────────────┐
-                  │ Candidate Explanation  │
-                  │ Scores & Skill Gaps    │
-                  └───────────┬────────────┘
-                              │
-                              ▼
-                  ┌────────────────────────┐
-                  │ Analytics & Storage    │
-                  │ SQLite / Data Export   │
-                  └────────────────────────┘
-```
-
-## Matching Methodology
-
-HireSense AI evaluates skill coverage using required and preferred skills.
-
-### Required Skills
-
-Required skills represent the core competencies specified by a job description.
-
-### Preferred Skills
-
-Preferred skills represent additional competencies that may strengthen a candidate's match.
-
-### Weighted Score
-
-The project uses a weighted scoring approach to combine required and preferred skill coverage.
-
-The illustrative weighting used in the evaluation is:
-
-- Required skills: 80%
-- Preferred skills: 20%
-
-The scoring method is a transparent skills-coverage heuristic, not a validated prediction of job performance.
-
 ## Project Structure
 
 ```text
-HireSense_SRS_SDD_Implementation/
-│
+HireSense-AI/
 ├── app/
 │   ├── main.py
+│   ├── api.py
 │   ├── matcher.py
 │   ├── analytics.py
-│   ├── evaluation.py
 │   ├── explainability.py
+│   ├── recruiter_assistant.py
 │   ├── semantic_matcher.py
-│   ├── batch_screening.py
-│   ├── storage.py
-│   └── api.py
-│
+│   └── storage.py
 ├── tests/
-│   ├── test_analytics.py
-│   ├── test_evaluation.py
-│   └── test_api.py
-│
 ├── data/
 ├── docs/
 ├── postman/
-│
 ├── Dockerfile
 ├── docker-compose.yml
 ├── Jenkinsfile
@@ -138,133 +67,87 @@ HireSense_SRS_SDD_Implementation/
 └── README.md
 ```
 
-*Some modules may vary depending on the final implementation.*
-
 ## Installation
 
-### 1. Clone the repository
+### Clone the Repository
 
 ```bash
 git clone https://github.com/yograj26/HireSense-AI.git
 cd HireSense-AI
 ```
 
-### 2. Create a virtual environment
+### Create a Virtual Environment
 
 ```bash
 python -m venv venv
 ```
 
+### Activate the Environment
+
 Windows:
 
 ```powershell
-venv\Scripts\activate
+.\venv\Scripts\Activate.ps1
 ```
 
-### 3. Install dependencies
+### Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Run the application
+## Run the Dashboard
 
 ```bash
 python -m streamlit run app/main.py
 ```
 
-The application will be accessible locally through the Streamlit URL shown in the terminal.
-
-## Testing
-
-Run automated tests:
-
-```bash
-python -m pytest tests -v
-```
-
-Check Python compilation:
-
-```bash
-python -m compileall app
-```
-
-## Docker
-
-Build the Docker application:
-
-```bash
-docker compose build
-```
-
-Start the containers:
-
-```bash
-docker compose up
-```
-
-Stop:
-
-```bash
-docker compose down
-```
-
-*Docker configuration should be verified before relying on these commands.*
-
-## API
-
-The project includes an API module intended for application integration.
-
-Start the API server:
+## Run the API
 
 ```bash
 python -m uvicorn app.api:app --reload --port 8000
 ```
 
-Swagger documentation:
+API documentation:
 
-```text
 http://127.0.0.1:8000/docs
+
+## Run Tests
+
+```bash
+python -m pytest tests -v
 ```
 
-## CI/CD
+## Docker Deployment
 
-The Jenkins pipeline is designed to automate:
+```bash
+docker compose build
+docker compose up -d
+```
 
-1. Python environment verification
-2. Dependency installation
-3. Automated testing
-4. Python compilation
+Dashboard:
 
-## Responsible AI Considerations
+http://localhost:8501
 
-HireSense AI is designed as a recruiter-support tool, not an autonomous hiring decision system.
+## Jenkins CI/CD
 
-- Matching scores are indicators of skills alignment, not candidate quality.
-- Recruiters should review original resumes and contextual information.
-- Automated scores should not be used as the sole basis for rejection.
-- Sensitive personal information should not be used to rank candidates.
-- The scoring method should be evaluated for bias and limitations before real-world use.
+HireSense AI uses a Jenkins pipeline to automate:
 
-## Future Scope
+1. Repository checkout
+2. Python environment verification
+3. Dependency installation
+4. Automated tests
+5. Application compilation
+6. Docker image build
 
-- Advanced resume entity extraction
-- LLM-based candidate analysis
-- Bias auditing and fairness evaluation
-- Job recommendation engine
-- Recruiter collaboration features
-- Cloud deployment
-- Advanced candidate ranking and visualization
-- Secure authentication and role-based access
+## Responsible AI
 
-## Author
+HireSense AI provides screening assistance and skill alignment analysis. Matching scores are not validated measures of candidate performance, and should not be used as the sole basis for employment decisions. Human review is essential.
 
-**Yograj Yadav**
+## Developer
 
-AI & Data Science | Machine Learning | Python | Data Analytics | Generative AI
+Developed as an AI & Data Science capstone project.
 
-GitHub: https://github.com/yograj26/HireSense-AI
+## License
 
----
-
-*HireSense AI — Turning resume screening into a more transparent, data-driven process.*
+This project is intended for academic and demonstration purposes.
