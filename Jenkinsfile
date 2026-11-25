@@ -18,11 +18,11 @@ pipeline {
             steps {
                 sh '''
                     set -eu
-
-                    grep -Eiv '^(torch|sentence[-_]transformers|transformers|tokenizers|huggingface[-_]hub|safetensors|hf[-_]xet|nvidia[-_]|cuda[-_]|triton)([<=>!~].*)?$' requirements.txt > requirements-ci.txt
-
-                    echo "Installing lightweight CI dependencies..."
-                    .venv/bin/python -m pip install --retries 3 --timeout 120 -r requirements-ci.txt pytest
+                    .venv/bin/python -m pip install \
+                        --disable-pip-version-check \
+                        --retries 3 \
+                        --timeout 120 \
+                        -r requirements-ci.txt
                 '''
             }
         }
@@ -50,7 +50,6 @@ pipeline {
         success {
             echo 'HireSense AI CI Pipeline Passed!'
         }
-
         failure {
             echo 'Build failed. Check Console Output.'
         }
