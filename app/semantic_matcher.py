@@ -1,52 +1,50 @@
-from functools import lru_cache
-from typing import Sequence
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+
+_model = None
+
+def get_model():
+    global _model
+
+    if _model is None:
+        _model = SentenceTransformer("all-MiniLM-L6-v2")
+
+    return _model
 
 
-MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+def calculate_semantic_similarity(resume_text, job_description):
+    if not resume_text.strip() or not job_description.strip():
+        return 0.0
 
+    model = get_model()
 
-@lru_cache(maxsize=1)
-def _load_model():
-    from sentence_transformers import SentenceTransformer
-
-    return SentenceTransformer(MODEL_NAME, device="cpu")
-
-
-def semantic_analysis(
-    job_description: str,
-    candidate_texts: Sequence[str],
-) -> list[float]:
-    if not job_description.strip():
-        raise ValueError("Job description cannot be empty.")
-
-    if not candidate_texts:
-        return []
-
-    nonempty_candidates = [
-        (index, text.strip())
-        for index, text in enumerate(candidate_texts)
-        if text.strip()
-    ]
-    scores = [0.0] * len(candidate_texts)
-    if not nonempty_candidates:
-        return scores
-
-    embeddings = _load_model().encode(
-        [job_description, *(text for _, text in nonempty_candidates)],
-        normalize_embeddings=True,
-        convert_to_numpy=True,
-        show_progress_bar=False,
+    embeddings = model.encode(
+        [resume_text, job_description],
+        convert_to_numpy=True
     )
-    job_embedding = embeddings[0]
 
-    for embedding_index, (candidate_index, _) in enumerate(
-        nonempty_candidates,
-        start=1,
-    ):
-        similarity = float((job_embedding * embeddings[embedding_index]).sum())
-        scores[candidate_index] = round(
-            max(0.0, min(1.0, similarity)) * 100,
-            2,
-        )
+    similarity = cosine_similarity(
+        [embeddings[0]],
+        [embeddings[1]]
+    )[0][0]
 
-    return scores
+    return round(float(similarity) * 100, 2)
+
+
+def semantic_analysis(resume_text, job_description):
+    score = calculate_semantic_similarity(
+        resume_text,
+        job_description
+    )
+
+    if score >= 75:
+        label = "High Semantic Similarity"
+    elif score >= 50:
+        label = "Moderate Semantic Similarity"
+    else:
+        label = "Low Semantic Similarity"
+
+    return {
+        "semantic_score": score,
+        "label": label
+    }
