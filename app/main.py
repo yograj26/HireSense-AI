@@ -4,6 +4,7 @@ import json
 import streamlit as st
 from matcher import score_match, extract_skills
 import pandas as pd
+from app.recruiter_assistant import generate_recruiter_insights
 from evaluation import evaluate_candidate
 from batch_screening import screen_uploaded_resumes
 from storage import init_db, save_screening, get_screening_history
@@ -380,3 +381,176 @@ with tabs[5]:
             "HireSense_screening_history.csv",
             "text/csv"
         )
+        st.divider()
+
+st.subheader("Responsible AI & Fairness")
+
+st.info(
+    "HireSense AI is a decision-support tool and not an automated hiring "
+    "decision system. Matching scores reflect skills alignment based on "
+    "the provided job requirements. Recruiters must independently review "
+    "candidate qualifications and avoid using scores as the sole basis "
+    "for hiring or rejection."
+)
+
+st.caption(
+    "The system does not validate job performance or guarantee "
+    "fairness across candidate groups."
+)
+
+
+
+st.divider()
+st.header("🤖 Recruiter Intelligence Assistant")
+
+if "batch_results" in st.session_state and st.session_state["batch_results"] is not None:
+
+    df = st.session_state["batch_results"]
+
+    if not df.empty:
+        st.success("Batch screening data detected!")
+
+        candidate_column = next(
+            (c for c in df.columns if c.lower() in ["candidate", "name", "candidate name"]),
+            None
+        )
+
+        if candidate_column:
+            selected_candidate = st.selectbox(
+                "Select Candidate",
+                df[candidate_column].astype(str).tolist()
+            )
+
+            candidate_row = df[
+                df[candidate_column].astype(str) == selected_candidate
+            ].iloc[0]
+
+            skill_column = next(
+                (c for c in df.columns if c.lower() in ["skills", "extracted skills", "candidate skills", "matched skills"]),
+                None
+            )
+
+            if skill_column:
+                raw_skills = candidate_row[skill_column]
+                if isinstance(raw_skills, list):
+                    candidate_skills = raw_skills
+                else:
+                    candidate_skills = [
+                        s.strip() for s in str(raw_skills).replace(";", ",").split(",")
+                        if s.strip()
+                    ]
+            else:
+                candidate_skills = []
+
+            job_skills_input = st.text_input(
+                "Job Requirements (comma-separated)",
+                placeholder="Python, SQL, Machine Learning, Docker"
+            )
+
+            if st.button("Generate Candidate Insights"):
+                job_skills = [
+                    s.strip() for s in job_skills_input.split(",")
+                    if s.strip()
+                ]
+
+                if not candidate_skills or not job_skills:
+                    st.warning("Candidate skills or job skills are missing.")
+                else:
+                    insights = generate_recruiter_insights(
+                        {"skills": candidate_skills},
+                        job_skills
+                    )
+
+                    st.subheader("Matched Skills")
+                    st.write(insights["matched_skills"])
+
+                    st.subheader("Missing Skills")
+                    st.write(insights["missing_skills"])
+
+                    st.subheader("Strengths")
+                    for item in insights["strengths"]:
+                        st.write("•", item)
+
+                    st.subheader("Development Areas")
+                    for item in insights["development_areas"]:
+                        st.write("•", item)
+
+                    st.subheader("Interview Questions")
+                    for i, question in enumerate(
+                        insights["interview_questions"], 1
+                    ):
+                        st.write(f"{i}. {question}")
+    else:
+        st.info("Batch screening results are empty.")
+
+else:
+    st.info("Run batch screening first to unlock recruiter insights.")
+
+
+
+st.divider()
+st.header("📊 Candidate Comparison")
+
+if "batch_results" in st.session_state and st.session_state["batch_results"] is not None:
+
+    comparison_df = st.session_state["batch_results"]
+
+    if not comparison_df.empty:
+
+        candidate_col = next(
+            (c for c in comparison_df.columns
+             if c.lower() in ["candidate", "candidate name", "name"]),
+            None
+        )
+
+        score_col = next(
+            (c for c in comparison_df.columns
+             if "score" in c.lower() and "%" in c),
+            None
+        )
+
+        if candidate_col and score_col:
+
+            candidate_list = comparison_df[candidate_col].astype(str).tolist()
+
+            selected = st.multiselect(
+                "Select up to 3 candidates",
+                candidate_list,
+                max_selections=3
+            )
+
+            if selected:
+                selected_df = comparison_df[
+                    comparison_df[candidate_col].astype(str).isin(selected)
+                ].copy()
+
+                st.subheader("Comparison Table")
+                st.dataframe(selected_df, use_container_width=True)
+
+                st.subheader("Score Comparison")
+
+                chart_df = selected_df.set_index(candidate_col)[score_col]
+                st.bar_chart(chart_df)
+
+                st.subheader("Ranking")
+
+                ranked = selected_df.sort_values(
+                    score_col, ascending=False
+                )
+
+                for i, (_, row) in enumerate(ranked.iterrows(), 1):
+                    st.write(
+                        f"**{i}. {row[candidate_col]}** — "
+                        f"{row[score_col]}%"
+                    )
+
+        else:
+            st.warning(
+                "Candidate name or score columns could not be detected."
+            )
+
+    else:
+        st.info("Screen candidates first to compare them.")
+
+else:
+    st.info("Run batch screening first to enable candidate comparison.")
