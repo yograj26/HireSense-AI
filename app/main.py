@@ -4,7 +4,7 @@ import json
 import streamlit as st
 from matcher import score_match, extract_skills
 import pandas as pd
-from app.recruiter_assistant import generate_recruiter_insights
+from recruiter_assistant import generate_recruiter_insights
 from evaluation import evaluate_candidate
 from batch_screening import screen_uploaded_resumes
 from storage import init_db, save_screening, get_screening_history, clear_history
