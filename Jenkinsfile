@@ -1,15 +1,14 @@
-
 pipeline {
     agent any
 
     stages {
         stage('Checkout') {
             steps {
-                echo 'Starting HireSense AI pipeline'
+                checkout scm
             }
         }
 
-        stage('Python Check') {
+        stage('Python Version') {
             steps {
                 bat 'python --version'
             }
@@ -17,6 +16,7 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
+                bat 'python -m pip install --upgrade pip'
                 bat 'python -m pip install -r requirements.txt'
             }
         }
@@ -32,14 +32,21 @@ pipeline {
                 bat 'python -m compileall app'
             }
         }
+
+        stage('Docker Build') {
+            steps {
+                bat 'docker build -t hiresense-ai .'
+            }
+        }
     }
 
     post {
         success {
-            echo 'HireSense AI pipeline completed successfully!'
+            echo 'HireSense AI CI pipeline passed successfully!'
         }
+
         failure {
-            echo 'Pipeline failed. Check the logs.'
+            echo 'Pipeline failed. Review the stage logs.'
         }
     }
 }
